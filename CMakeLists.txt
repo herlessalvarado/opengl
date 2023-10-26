@@ -8,6 +8,7 @@ find_package(glfw3 REQUIRED)
 add_library(glad STATIC glad/src/glad.c)
 target_include_directories(glad PUBLIC glad/include)
 
-add_executable(opengl main.cpp)
+add_executable(opengl main.cpp
+        stb_image.cpp)
 
 target_link_libraries(opengl PRIVATE glfw glad)
