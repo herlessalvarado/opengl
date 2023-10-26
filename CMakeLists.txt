@@ -8,7 +8,10 @@ find_package(glfw3 REQUIRED)
 add_library(glad STATIC glad/src/glad.c)
 target_include_directories(glad PUBLIC glad/include)
 
+set(GLM_ROOT glm)
+add_subdirectory(${GLM_ROOT})
+
 add_executable(opengl main.cpp
         stb_image.cpp)
 
-target_link_libraries(opengl PRIVATE glfw glad)
+target_link_libraries(opengl PRIVATE glfw glad glm)
