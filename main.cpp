@@ -7,6 +7,8 @@
 #include "shader.h"
 #include "stb_image.h"
 #include "camera.h"
+#include "model.h"
+
 
 #include <iostream>
 
@@ -20,7 +22,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 20.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -31,6 +33,17 @@ float lastFrame = 0.0f;
 
 // lighting
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+
+// models
+glm::vec3 marioPos(-10.0f, 0.0f, 0.0f);
+float movementSpeed = 0.05f; // Adjust the speed as needed
+
+bool isJumping = false;
+bool hasReachedMaxJumpHeight = false;
+float maxJumpHeight = 1.0f;
+float jumpVelocity = 0.1f;
+float jumpCooldown = 1.0f;
+float jumpCooldownTimer = 0.0f;
 
 int main()
 {
@@ -152,6 +165,8 @@ int main()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
+    Model mario("../resources/mario/mario.obj");
+    Model fragileBox("../resources/fragile_box/fragile_box.obj");
 
     // render loop
     // -----------
@@ -189,10 +204,40 @@ int main()
         glm::mat4 model = glm::mat4(1.0f);
         lightingShader.setMat4("model", model);
 
-        // render the cube
-        glBindVertexArray(cubeVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        // render mario
+        if (jumpCooldownTimer > 0.0f) {
+            jumpCooldownTimer -= deltaTime;
+        }
 
+        if (isJumping) {
+            if(hasReachedMaxJumpHeight){
+                marioPos.y -= jumpVelocity;
+            }else{
+                marioPos.y += jumpVelocity;
+                if (marioPos.y >= maxJumpHeight) {
+                    hasReachedMaxJumpHeight = true;
+                }
+            }
+            if (marioPos.y <= 0.0f) {
+                isJumping = false;
+                hasReachedMaxJumpHeight = false;
+                marioPos.y = 0.0f;
+            }
+        }
+        model = glm::translate(model, marioPos);
+        model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
+        float rotationAngle = glm::radians(180.0f); // Convert degrees to radians
+        glm::vec3 rotationAxis(0.0f, 1.0f, 0.0f); // Rotate around the y-axi
+        model = glm::rotate(model, rotationAngle, rotationAxis);
+        lightingShader.setMat4("model", model);
+        mario.Draw(lightingShader);
+
+        // render obstacle
+        model = glm::mat4(1.0f);  // Reset the model matrix
+        glm::vec3 obstaclePos(5.0f, 0.0f, 0.0f);  // Set obstacle position
+        model = glm::translate(model, obstaclePos);
+        lightingShader.setMat4("model", model);
+        fragileBox.Draw(lightingShader);
 
         // also draw the lamp object
         lightCubeShader.use();
@@ -236,10 +281,16 @@ void processInput(GLFWwindow *window)
         camera.ProcessKeyboard(FORWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
         camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) // Left movement
+        marioPos.x -= movementSpeed;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) // Right movement
+        marioPos.x += movementSpeed;
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+        if (!isJumping && jumpCooldownTimer <= 0.0f) {
+            isJumping = true;
+            jumpCooldownTimer = jumpCooldown;
+        }
+    }
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -271,7 +322,7 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastX = xpos;
     lastY = ypos;
 
-    camera.ProcessMouseMovement(xoffset, yoffset);
+//    camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
