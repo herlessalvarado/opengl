@@ -23,6 +23,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <cfloat>
 using namespace std;
 
 unsigned int TextureFromFile(const char *path, const string &directory, bool gamma = false);
@@ -35,11 +36,16 @@ public:
     vector<Mesh>    meshes;
     string directory;
     bool gammaCorrection;
+    glm::vec3 minExtents;
+    glm::vec3 maxExtents;
 
     // constructor, expects a filepath to a 3D model.
     Model(string const &path, bool gamma = false) : gammaCorrection(gamma)
     {
         loadModel(path);
+        minExtents = glm::vec3(FLT_MAX, FLT_MAX, FLT_MAX);
+        maxExtents = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+        calculateBoundingBox();
     }
 
     // draws the model, and thus all its meshes
@@ -203,6 +209,19 @@ private:
             }
         }
         return textures;
+    }
+
+    void calculateBoundingBox() {
+        for (const Mesh& mesh : meshes) {
+            for (const Vertex& vertex : mesh.vertices) {
+                minExtents.x = std::fmin(minExtents.x, vertex.Position.x);
+                minExtents.y = std::fmin(minExtents.y, vertex.Position.y);
+                minExtents.z = std::fmin(minExtents.z, vertex.Position.z);
+                maxExtents.x = std::fmax(maxExtents.x, vertex.Position.x);
+                maxExtents.y = std::fmax(maxExtents.y, vertex.Position.y);
+                maxExtents.z = std::fmax(maxExtents.z, vertex.Position.z);
+            }
+        }
     }
 };
 
