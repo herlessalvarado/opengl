@@ -32,7 +32,7 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 // lighting
-glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+glm::vec3 lightBulbPos(0.0f, 7.0f, 0.0f);
 
 // models
 glm::vec3 marioPos(-10.0f, 0.0f, 0.0f);
@@ -44,6 +44,19 @@ float maxJumpHeight = 1.0f;
 float jumpVelocity = 0.1f;
 float jumpCooldown = 1.0f;
 float jumpCooldownTimer = 0.0f;
+
+float hasCollided = false;
+
+bool CheckCollision(const glm::vec3& minA, const glm::vec3& maxA, const glm::vec3& minB, const glm::vec3& maxB) {
+    return (
+            minA.x <= maxB.x &&
+            maxA.x >= minB.x &&
+            minA.y <= maxB.y &&
+            maxA.y >= minB.y &&
+            minA.z <= maxB.z &&
+            maxA.z >= minB.z
+    );
+}
 
 int main()
 {
@@ -92,81 +105,16 @@ int main()
     Shader lightingShader("../colors.vs", "../colors.fs");
     Shader lightCubeShader("../light_cube.vs", "../light_cube.fs");
 
-    // set up vertex data (and buffer(s)) and configure vertex attributes
-    // ------------------------------------------------------------------
-    float vertices[] = {
-            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-            0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-            0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-            0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-            -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-
-            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-            0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-            0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-            0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-            -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-
-            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-            -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-            -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-
-            0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-            0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-            0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-            0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-            0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-            0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-
-            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-            0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-            0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-            0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-            -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-
-            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-            0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-            0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-            0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-            -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
-    };
-    // first, configure the cube's VAO (and VBO)
-    unsigned int VBO, cubeVAO;
-    glGenVertexArrays(1, &cubeVAO);
-    glGenBuffers(1, &VBO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glBindVertexArray(cubeVAO);
-
-    // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    // normal attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-
-    // second, configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
-    unsigned int lightCubeVAO;
-    glGenVertexArrays(1, &lightCubeVAO);
-    glBindVertexArray(lightCubeVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    // note that we update the lamp's position attribute's stride to reflect the updated buffer data
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
     Model mario("../resources/mario/mario.obj");
     Model fragileBox("../resources/fragile_box/fragile_box.obj");
+    Model lightBulb("../resources/light_bulb/light_bulb.obj");
+
+    glm::vec3 marioMinInitial = mario.minExtents;
+    glm::vec3 marioMaxInitial = mario.maxExtents;
+    glm::vec3 marioMin, marioMax;
+    glm::vec3 obstacleMinInitial = fragileBox.minExtents;
+    glm::vec3 obstacleMaxInitial = fragileBox.maxExtents;
+    glm::vec3 obstacleMin, obstacleMax;
 
     // render loop
     // -----------
@@ -191,7 +139,7 @@ int main()
         lightingShader.use();
         lightingShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
         lightingShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-        lightingShader.setVec3("lightPos", lightPos);
+        lightingShader.setVec3("lightPos", lightBulbPos);
         lightingShader.setVec3("viewPos", camera.Position);
 
         // view/projection transformations
@@ -203,6 +151,10 @@ int main()
         // world transformation
         glm::mat4 model = glm::mat4(1.0f);
         lightingShader.setMat4("model", model);
+
+        if (CheckCollision(marioMin, marioMax, obstacleMin, obstacleMax)) {
+            marioPos = glm::vec3(-10.0f, 0.0f, 0.0f);
+        }
 
         // render mario
         if (jumpCooldownTimer > 0.0f) {
@@ -230,6 +182,15 @@ int main()
         glm::vec3 rotationAxis(0.0f, 1.0f, 0.0f); // Rotate around the y-axi
         model = glm::rotate(model, rotationAngle, rotationAxis);
         lightingShader.setMat4("model", model);
+
+        // update bounding box
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, marioPos);
+        glm::vec4 marioMinTransformed = model * glm::vec4(marioMinInitial, 1.0f);
+        glm::vec4 marioMaxTransformed = model * glm::vec4(marioMaxInitial, 1.0f);
+        marioMin = glm::vec3(marioMinTransformed);
+        marioMax = glm::vec3(marioMaxTransformed);
+
         mario.Draw(lightingShader);
 
         // render obstacle
@@ -237,19 +198,29 @@ int main()
         glm::vec3 obstaclePos(5.0f, 0.0f, 0.0f);  // Set obstacle position
         model = glm::translate(model, obstaclePos);
         lightingShader.setMat4("model", model);
+
+        // update bounding box
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, obstaclePos);
+        glm::vec4 obstacleMinTransformed = model * glm::vec4(obstacleMinInitial, 1.0f);
+        glm::vec4 obstacleMaxTransformed = model * glm::vec4(obstacleMaxInitial, 1.0f);
+        obstacleMin = glm::vec3(obstacleMinTransformed);
+        obstacleMax = glm::vec3(obstacleMaxTransformed);
+
         fragileBox.Draw(lightingShader);
 
-        // also draw the lamp object
+        // lightBulb
         lightCubeShader.use();
         lightCubeShader.setMat4("projection", projection);
         lightCubeShader.setMat4("view", view);
         model = glm::mat4(1.0f);
-        model = glm::translate(model, lightPos);
-        model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+        model = glm::translate(model, lightBulbPos);
+        model = glm::scale(model, glm::vec3(0.5f));
+        rotationAngle = glm::radians(180.0f);
+        rotationAxis = glm::vec3(0.0f, 0.0f, 1.0f);
+        model = glm::rotate(model, rotationAngle, rotationAxis);
         lightCubeShader.setMat4("model", model);
-
-        glBindVertexArray(lightCubeVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        lightBulb.Draw(lightCubeShader);
 
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -257,12 +228,6 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-
-    // optional: de-allocate all resources once they've outlived their purpose:
-    // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &cubeVAO);
-    glDeleteVertexArrays(1, &lightCubeVAO);
-    glDeleteBuffers(1, &VBO);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
