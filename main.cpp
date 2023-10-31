@@ -182,8 +182,8 @@ int main()
         }
 
         // check collision with cube obstacles
-        for(int i=0; i<numberOfObstacles; i++){
-            if(CheckCollision(marioMinBB, marioMaxBB, obstacles[i].currentMaxExtents, obstacles[i].currentMaxExtents)){
+        for(int i=0; i<1; i++){
+            if(CheckCollision(marioMinBB, marioMaxBB, obstacles[i].currentMinExtents, obstacles[i].currentMaxExtents)){
                 marioPos = glm::vec3(-10.0f, 0.0f, 0.0f);
             }
         }
