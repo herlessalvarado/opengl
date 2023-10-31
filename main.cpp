@@ -9,7 +9,6 @@
 #include "camera.h"
 #include "model.h"
 
-
 #include <iostream>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -22,7 +21,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 20.0f));
+Camera camera(glm::vec3(0.0f, 5.0f, 20.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -44,8 +43,6 @@ float maxJumpHeight = 1.0f;
 float jumpVelocity = 0.1f;
 float jumpCooldown = 1.0f;
 float jumpCooldownTimer = 0.0f;
-
-float hasCollided = false;
 
 bool CheckCollision(const glm::vec3& minA, const glm::vec3& maxA, const glm::vec3& minB, const glm::vec3& maxB) {
     return (
@@ -102,8 +99,71 @@ int main()
 
     // build and compile our shader zprogram
     // ------------------------------------
-    Shader lightingShader("../colors.vs", "../colors.fs");
-    Shader lightCubeShader("../light_cube.vs", "../light_cube.fs");
+
+    Shader lightingShader("../lighting.vs", "../lighting.fs");
+    Shader lightShader("../light.vs", "../light.fs");
+    Shader modelsShader("../models.vs", "../models.fs");
+
+    // ------------------------------------------------------------------
+    float vertices[] = {
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+            0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+            0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+            0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+
+            0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+            0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+            0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+            0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+            0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+            0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+            0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+            0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+            0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+            0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+    };
+    // first, configure the cube's VAO (and VBO)
+    unsigned int VBO, cubeVAO;
+    glGenVertexArrays(1, &cubeVAO);
+    glGenBuffers(1, &VBO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glBindVertexArray(cubeVAO);
+
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    // normal attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     Model mario("../resources/mario/mario.obj");
     Model fragileBox("../resources/fragile_box/fragile_box.obj");
@@ -152,6 +212,10 @@ int main()
         glm::mat4 model = glm::mat4(1.0f);
         lightingShader.setMat4("model", model);
 
+        // render the cube
+        glBindVertexArray(cubeVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
         if (CheckCollision(marioMin, marioMax, obstacleMin, obstacleMax)) {
             marioPos = glm::vec3(-10.0f, 0.0f, 0.0f);
         }
@@ -176,12 +240,18 @@ int main()
                 marioPos.y = 0.0f;
             }
         }
+
+
+        modelsShader.use();
+        modelsShader.setMat4("projection", projection);
+        modelsShader.setMat4("view", view);
+        model = glm::mat4(1.0f);
         model = glm::translate(model, marioPos);
         model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
         float rotationAngle = glm::radians(180.0f); // Convert degrees to radians
         glm::vec3 rotationAxis(0.0f, 1.0f, 0.0f); // Rotate around the y-axi
         model = glm::rotate(model, rotationAngle, rotationAxis);
-        lightingShader.setMat4("model", model);
+        modelsShader.setMat4("model", model);
 
         // update bounding box
         model = glm::mat4(1.0f);
@@ -191,13 +261,13 @@ int main()
         marioMin = glm::vec3(marioMinTransformed);
         marioMax = glm::vec3(marioMaxTransformed);
 
-        mario.Draw(lightingShader);
+        mario.Draw(modelsShader);
 
         // render obstacle
         model = glm::mat4(1.0f);  // Reset the model matrix
         glm::vec3 obstaclePos(5.0f, 0.0f, 0.0f);  // Set obstacle position
         model = glm::translate(model, obstaclePos);
-        lightingShader.setMat4("model", model);
+        modelsShader.setMat4("model", model);
 
         // update bounding box
         model = glm::mat4(1.0f);
@@ -207,20 +277,20 @@ int main()
         obstacleMin = glm::vec3(obstacleMinTransformed);
         obstacleMax = glm::vec3(obstacleMaxTransformed);
 
-        fragileBox.Draw(lightingShader);
+        fragileBox.Draw(modelsShader);
 
         // lightBulb
-        lightCubeShader.use();
-        lightCubeShader.setMat4("projection", projection);
-        lightCubeShader.setMat4("view", view);
+        lightShader.use();
+        lightShader.setMat4("projection", projection);
+        lightShader.setMat4("view", view);
         model = glm::mat4(1.0f);
         model = glm::translate(model, lightBulbPos);
         model = glm::scale(model, glm::vec3(0.5f));
         rotationAngle = glm::radians(180.0f);
         rotationAxis = glm::vec3(0.0f, 0.0f, 1.0f);
         model = glm::rotate(model, rotationAngle, rotationAxis);
-        lightCubeShader.setMat4("model", model);
-        lightBulb.Draw(lightCubeShader);
+        lightShader.setMat4("model", model);
+        lightBulb.Draw(lightShader);
 
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -228,6 +298,11 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
+    // optional: de-allocate all resources once they've outlived their purpose:
+    // ------------------------------------------------------------------------
+    glDeleteVertexArrays(1, &cubeVAO);
+    glDeleteBuffers(1, &VBO);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
@@ -246,9 +321,13 @@ void processInput(GLFWwindow *window)
         camera.ProcessKeyboard(FORWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
         camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) // Left movement
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera.ProcessKeyboard(LEFT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera.ProcessKeyboard(RIGHT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
         marioPos.x -= movementSpeed;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) // Right movement
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
         marioPos.x += movementSpeed;
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
         if (!isJumping && jumpCooldownTimer <= 0.0f) {
@@ -287,7 +366,7 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastX = xpos;
     lastY = ypos;
 
-//    camera.ProcessMouseMovement(xoffset, yoffset);
+    camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
