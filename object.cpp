@@ -86,6 +86,7 @@ void Cube::display(Shader &sh){
     sh.setInt("material.specular", 1);
 
     glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, initialPos);
     sh.setMat4("model", model);
 
     // bind diffuse map

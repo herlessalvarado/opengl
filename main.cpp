@@ -33,8 +33,14 @@ float lastFrame = 0.0f;
 // lighting
 glm::vec3 lightBulbPos(0.0f, 7.0f, 0.0f);
 
-// cube
-Cube cube;
+// obstacles
+vector<Cube> obstacles;
+vector<glm::vec3> obstaclesPositions = {
+        glm::vec3(-7.0f, 0.0f, 0.0f),
+        glm::vec3(-2.0f, 0.0f, 0.0f),
+        glm::vec3(3.0f, 0.0f, 0.0f)
+};
+int numberOfObstacles = obstaclesPositions.size();
 
 // models
 glm::vec3 marioPos(-10.0f, 0.0f, 0.0f);
@@ -106,7 +112,12 @@ int main()
     Shader lightShader("../light.vs", "../light.fs");
     Shader modelsShader("../models.vs", "../models.fs");
 
-    cube.setup();
+    // setup obstacles
+    for(int i=0; i<numberOfObstacles; i++){
+        Cube cube(obstaclesPositions[i]);
+        cube.setup();
+        obstacles.push_back(cube);
+    }
 
     Model mario("../resources/mario/mario.obj");
     Model fragileBox("../resources/fragile_box/fragile_box.obj");
@@ -161,8 +172,10 @@ int main()
         glm::mat4 model = glm::mat4(1.0f);
         lightingShader.setMat4("model", model);
 
-        // render cube
-        cube.display(lightingShader);
+        // render obstacles
+        for(int i=0; i<numberOfObstacles; i++){
+            obstacles[i].display(lightingShader);
+        }
 
         if (CheckCollision(marioMin, marioMax, obstacleMin, obstacleMax)) {
             marioPos = glm::vec3(-10.0f, 0.0f, 0.0f);
@@ -249,8 +262,10 @@ int main()
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &cube.VA0);
-    glDeleteBuffers(1, &cube.VBO);
+    for(int i=0; i<numberOfObstacles; i++){
+        glDeleteVertexArrays(1, &obstacles[i].VA0);
+        glDeleteBuffers(1, &obstacles[i].VBO);
+    }
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------

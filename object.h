@@ -23,6 +23,7 @@ public:
     vector<glm::vec3> normals;
     vector<glm::vec2> textureCoords;
     GLuint VA0, VBO;
+    glm::vec3 initialPos;
     glm::vec3 minExtents;
     glm::vec3 maxExtents;
 
@@ -48,7 +49,9 @@ public:
 
 class Cube: public Object{
 public:
-    Cube() {};
+    Cube(glm::vec3 pos) {
+        initialPos = pos;
+    };
     GLuint setup() override;
     void display(Shader &sh) override;
 };
