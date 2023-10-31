@@ -13,6 +13,6 @@ set(GLM_ROOT glm)
 add_subdirectory(${GLM_ROOT})
 
 add_executable(opengl main.cpp
-        stb_image.cpp)
+        stb_image.cpp object.cpp)
 
 target_link_libraries(opengl PRIVATE glfw glad glm assimp::assimp)
