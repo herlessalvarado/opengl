@@ -23,11 +23,27 @@ public:
     vector<glm::vec3> normals;
     vector<glm::vec2> textureCoords;
     GLuint VA0, VBO;
+    glm::vec3 minExtents;
+    glm::vec3 maxExtents;
 
-    Object() {};
+    Object() {
+        minExtents = glm::vec3(FLT_MAX, FLT_MAX, FLT_MAX);
+        maxExtents = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+    };
 
     virtual GLuint setup()=0;
     virtual void display(Shader &sh)=0;
+
+    void calculateBoundingBox() {
+        for (const glm::vec3& vertex : vertices) {
+            minExtents.x = std::fmin(minExtents.x, vertex.x);
+            minExtents.y = std::fmin(minExtents.y, vertex.y);
+            minExtents.z = std::fmin(minExtents.z, vertex.z);
+            maxExtents.x = std::fmax(maxExtents.x, vertex.x);
+            maxExtents.y = std::fmax(maxExtents.y, vertex.y);
+            maxExtents.z = std::fmax(maxExtents.z, vertex.z);
+        }
+    }
 };
 
 class Cube: public Object{

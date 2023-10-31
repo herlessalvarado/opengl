@@ -59,6 +59,10 @@ GLuint Cube::setup(){
         normals.push_back(v2);
         textureCoords.push_back(v3);
     }
+
+    // bounding box
+    calculateBoundingBox();
+
     glGenVertexArrays(1, &VA0);
     glGenBuffers(1, &VBO);
 
