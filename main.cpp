@@ -21,7 +21,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // camera
-Camera camera(glm::vec3(0.0f, 5.0f, 20.0f));
+Camera camera(glm::vec3(0.0f, 6.0f, 20.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -29,6 +29,7 @@ bool firstMouse = true;
 // timing
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+bool isFirstFrame = true;
 
 // lighting
 glm::vec3 lightBulbPos(0.0f, 7.0f, 0.0f);
@@ -36,19 +37,23 @@ glm::vec3 lightBulbPos(0.0f, 7.0f, 0.0f);
 // obstacles
 vector<Cube> obstacles;
 vector<glm::vec3> obstaclesPositions = {
-        glm::vec3(-7.0f, 0.0f, 0.0f),
-        glm::vec3(-2.0f, 0.0f, 0.0f),
-        glm::vec3(3.0f, 0.0f, 0.0f)
+        glm::vec3(-5.0f, 0.0f, 0.0f),
+        glm::vec3(-2.0f, 0.0f, -3.0f),
+        glm::vec3(3.0f, 0.0f, 3.0f)
 };
 int numberOfObstacles = obstaclesPositions.size();
 
 // models
+glm::vec3 grassPos(0.0f, -0.5f, 0.0f);
 glm::vec3 marioPos(-10.0f, 0.0f, 0.0f);
-float movementSpeed = 0.05f; // Adjust the speed as needed
+glm::vec3 peachPos(10.0f, 1.0f, 0.0f);
+glm::vec3 fragileBoxPos(5.0f, 0.5f, -2.0f);
 
+// motion setting
+float movementSpeed = 0.1f;
 bool isJumping = false;
 bool hasReachedMaxJumpHeight = false;
-float maxJumpHeight = 1.0f;
+float maxJumpHeight = 2.0f;
 float jumpVelocity = 0.1f;
 float jumpCooldown = 1.0f;
 float jumpCooldownTimer = 0.0f;
@@ -106,7 +111,7 @@ int main()
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
-    // build and compile our shader zprogram
+    // build and compile our shader program
     // ------------------------------------
     Shader lightingShader("../lighting.vs", "../lighting.fs");
     Shader lightShader("../light.vs", "../light.fs");
@@ -119,16 +124,15 @@ int main()
         obstacles.push_back(cube);
     }
 
+    Model grass("../resources/grass/grass.obj");
     Model mario("../resources/mario/mario.obj");
+    Model peach("../resources/peach/peach.obj");
     Model fragileBox("../resources/fragile_box/fragile_box.obj");
     Model lightBulb("../resources/light_bulb/light_bulb.obj");
 
-    glm::vec3 marioMinInitial = mario.minExtents;
-    glm::vec3 marioMaxInitial = mario.maxExtents;
-    glm::vec3 marioMin, marioMax;
-    glm::vec3 obstacleMinInitial = fragileBox.minExtents;
-    glm::vec3 obstacleMaxInitial = fragileBox.maxExtents;
-    glm::vec3 obstacleMin, obstacleMax;
+    glm::vec3 marioMinBB = mario.minExtents, marioMaxBB = mario.maxExtents;
+    glm::vec3 peachMinBB = peach.minExtents, peachMaxBB = peach.maxExtents;
+    glm::vec3 fragileBoxMinBB = fragileBox.minExtents, fragileBoxMaxBB = fragileBox.maxExtents;
 
     // render loop
     // -----------
@@ -177,11 +181,24 @@ int main()
             obstacles[i].display(lightingShader);
         }
 
-        if (CheckCollision(marioMin, marioMax, obstacleMin, obstacleMax)) {
+        // check collision with cube obstacles
+        for(int i=0; i<numberOfObstacles; i++){
+            if(CheckCollision(marioMinBB, marioMaxBB, obstacles[i].currentMaxExtents, obstacles[i].currentMaxExtents)){
+                marioPos = glm::vec3(-10.0f, 0.0f, 0.0f);
+            }
+        }
+
+        // check collision with fragile box
+        if (CheckCollision(marioMinBB, marioMaxBB, fragileBoxMinBB, fragileBoxMaxBB) && !isFirstFrame) {
             marioPos = glm::vec3(-10.0f, 0.0f, 0.0f);
         }
 
-        // render mario
+        // check collision with peach
+        if(CheckCollision(marioMinBB, marioMaxBB, peachMinBB, peachMaxBB) && !isFirstFrame){
+            cout << "you have won" << endl;
+        }
+
+        // mario jump
         if (jumpCooldownTimer > 0.0f) {
             jumpCooldownTimer -= deltaTime;
         }
@@ -202,7 +219,7 @@ int main()
             }
         }
 
-
+        // render mario
         modelsShader.use();
         modelsShader.setMat4("projection", projection);
         modelsShader.setMat4("view", view);
@@ -214,33 +231,57 @@ int main()
         model = glm::rotate(model, rotationAngle, rotationAxis);
         modelsShader.setMat4("model", model);
 
-        // update bounding box
+        // update mario bounding box
         model = glm::mat4(1.0f);
         model = glm::translate(model, marioPos);
-        glm::vec4 marioMinTransformed = model * glm::vec4(marioMinInitial, 1.0f);
-        glm::vec4 marioMaxTransformed = model * glm::vec4(marioMaxInitial, 1.0f);
-        marioMin = glm::vec3(marioMinTransformed);
-        marioMax = glm::vec3(marioMaxTransformed);
+        glm::vec4 marioMinTransformed = model * glm::vec4(mario.minExtents, 1.0f);
+        glm::vec4 marioMaxTransformed = model * glm::vec4(mario.maxExtents, 1.0f);
+        marioMinBB = glm::vec3(marioMinTransformed);
+        marioMaxBB = glm::vec3(marioMaxTransformed);
 
         mario.Draw(modelsShader);
 
-        // render obstacle
+        // render fragile box
         model = glm::mat4(1.0f);  // Reset the model matrix
-        glm::vec3 obstaclePos(5.0f, 0.0f, 0.0f);  // Set obstacle position
-        model = glm::translate(model, obstaclePos);
+        model = glm::translate(model, fragileBoxPos);
         modelsShader.setMat4("model", model);
 
-        // update bounding box
+        // update fragile box bounding box
         model = glm::mat4(1.0f);
-        model = glm::translate(model, obstaclePos);
-        glm::vec4 obstacleMinTransformed = model * glm::vec4(obstacleMinInitial, 1.0f);
-        glm::vec4 obstacleMaxTransformed = model * glm::vec4(obstacleMaxInitial, 1.0f);
-        obstacleMin = glm::vec3(obstacleMinTransformed);
-        obstacleMax = glm::vec3(obstacleMaxTransformed);
+        model = glm::translate(model, fragileBoxPos);
+        glm::vec4 fragileBoxMinTransformed = model * glm::vec4(fragileBox.minExtents, 1.0f);
+        glm::vec4 fragileBoxMaxTransformed = model * glm::vec4(fragileBox.maxExtents, 1.0f);
+        fragileBoxMinBB = glm::vec3(fragileBoxMinTransformed);
+        fragileBoxMaxBB = glm::vec3(fragileBoxMaxTransformed);
 
         fragileBox.Draw(modelsShader);
 
-        // lightBulb
+        // render grass
+        model = glm::mat4(1.0f);  // Reset the model matrix
+        model = glm::translate(model, grassPos);
+        model = glm::scale(model, glm::vec3(20.0f, 1.0f, 20.0f));
+        rotationAngle = glm::radians(-90.0f); // Convert degrees to radians
+        rotationAxis = glm::vec3(0.0f, 0.0f, 1.0f); // Rotate around the y-axi
+        model = glm::rotate(model, rotationAngle, rotationAxis);
+        modelsShader.setMat4("model", model);
+        grass.Draw(modelsShader);
+
+        // render peach
+        model = glm::mat4(1.0f);  // Reset the model matrix
+        model = glm::translate(model, peachPos);
+        modelsShader.setMat4("model", model);
+
+        // update peach bounding box
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, peachPos);
+        glm::vec4 peachMinTransformed = model * glm::vec4(peach.minExtents, 1.0f);
+        glm::vec4 peachMaxTransformed = model * glm::vec4(peach.maxExtents, 1.0f);
+        peachMinBB = glm::vec3(peachMinTransformed);
+        peachMaxBB = glm::vec3(peachMaxTransformed);
+
+        peach.Draw(modelsShader);
+
+        // render lightBulb
         lightShader.use();
         lightShader.setMat4("projection", projection);
         lightShader.setMat4("view", view);
@@ -253,6 +294,7 @@ int main()
         lightShader.setMat4("model", model);
         lightBulb.Draw(lightShader);
 
+        isFirstFrame = false;
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -288,6 +330,10 @@ void processInput(GLFWwindow *window)
         camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+        marioPos.z -= movementSpeed;
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+        marioPos.z += movementSpeed;
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
         marioPos.x -= movementSpeed;
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
