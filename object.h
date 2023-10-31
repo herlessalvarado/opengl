@@ -24,26 +24,30 @@ public:
     vector<glm::vec2> textureCoords;
     GLuint VA0, VBO;
     glm::vec3 initialPos;
-    glm::vec3 minExtents;
-    glm::vec3 maxExtents;
+    glm::vec3 initialMinExtents, currentMinExtents;
+    glm::vec3 initialMaxExtents, currentMaxExtents;
 
     Object() {
-        minExtents = glm::vec3(FLT_MAX, FLT_MAX, FLT_MAX);
-        maxExtents = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+        initialMinExtents = glm::vec3(FLT_MAX, FLT_MAX, FLT_MAX);
+        initialMaxExtents = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
     };
 
     virtual GLuint setup()=0;
     virtual void display(Shader &sh)=0;
 
-    void calculateBoundingBox() {
+    void calculateBoundingBox(glm::mat4 model) {
         for (const glm::vec3& vertex : vertices) {
-            minExtents.x = std::fmin(minExtents.x, vertex.x);
-            minExtents.y = std::fmin(minExtents.y, vertex.y);
-            minExtents.z = std::fmin(minExtents.z, vertex.z);
-            maxExtents.x = std::fmax(maxExtents.x, vertex.x);
-            maxExtents.y = std::fmax(maxExtents.y, vertex.y);
-            maxExtents.z = std::fmax(maxExtents.z, vertex.z);
+            initialMinExtents.x = std::fmin(initialMinExtents.x, vertex.x);
+            initialMinExtents.y = std::fmin(initialMinExtents.y, vertex.y);
+            initialMinExtents.z = std::fmin(initialMinExtents.z, vertex.z);
+            initialMaxExtents.x = std::fmax(initialMaxExtents.x, vertex.x);
+            initialMaxExtents.y = std::fmax(initialMaxExtents.y, vertex.y);
+            initialMaxExtents.z = std::fmax(initialMaxExtents.z, vertex.z);
         }
+        glm::vec4 minExtentsTransformed = model * glm::vec4(initialMinExtents, 1.0f);
+        glm::vec4 maxExtentsTransformed = model * glm::vec4(initialMaxExtents, 1.0f);
+        currentMinExtents = glm::vec3(minExtentsTransformed);
+        currentMaxExtents = glm::vec3(maxExtentsTransformed);
     }
 };
 

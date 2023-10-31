@@ -60,9 +60,6 @@ GLuint Cube::setup(){
         textureCoords.push_back(v3);
     }
 
-    // bounding box
-    calculateBoundingBox();
-
     glGenVertexArrays(1, &VA0);
     glGenBuffers(1, &VBO);
 
@@ -87,6 +84,8 @@ void Cube::display(Shader &sh){
 
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, initialPos);
+    // get bounding box
+    calculateBoundingBox(model);
     sh.setMat4("model", model);
 
     // bind diffuse map
