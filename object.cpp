@@ -6,6 +6,86 @@
 
 unsigned int loadTexture(const char *path);
 
+GLuint Curve::setup() {
+    // x = y * cos(4*y)   y E [0,2pi]
+    for(float y=0; y < 2*3.1415; y += 0.1) {
+        float x = y * cos(4 * y);
+        vertices.emplace_back(glm::vec3(x,y,0));
+        normals.emplace_back(glm::vec3(1, sin(4*y),0));
+    }
+    glGenVertexArrays( 1, &VA0);
+    glBindVertexArray( VA0);
+    GLuint vbos[2];
+    glGenBuffers( 2, vbos );
+
+    glBindBuffer( GL_ARRAY_BUFFER, vbos[0] );
+    glBufferData( GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW );
+    glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray( 0 );
+
+    glBindBuffer( GL_ARRAY_BUFFER, vbos[1] );
+    glBufferData( GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW );
+    glVertexAttribPointer( 1, 3, GL_FLOAT, GL_TRUE, 0, (void*)0 );
+    glEnableVertexAttribArray( 1 );
+
+    glBindVertexArray( 0 );
+    glBindBuffer( GL_ARRAY_BUFFER, 0 );
+
+    return VA0;
+}
+void Curve::display(Shader &sh) {
+    glm::mat4 model = glm::mat4(1.0);
+    sh.setMat4("model", model);
+    glBindVertexArray(VA0);
+    glDrawArrays(GL_LINE_STRIP, 0, vertices.size());
+    glBindVertexArray(0);
+}
+
+GLuint Surface::setup() {
+    // x = (2 + cos(t))*cos(phi)
+    // y = (2 + cos(t))*sen(phi)
+    // z = t
+    float x, y, z;
+    glm::vec3 dt, ds;
+    for(float t=0; t < 2*3.1415; t += 0.1) {
+        for(float phi=0; phi < 2*3.1415; phi += 0.1){
+            x = (2 + cos(t))*cos(phi);
+            y = (2 + cos(t))*sin(phi);
+            z = t;
+            dt = glm::vec3(-sin(t)*cos(phi), -sin(t)*sin(phi),1);
+            ds = glm::vec3();
+            vertices.emplace_back(glm::vec3(x,y,z));
+            normals.emplace_back(glm::vec3(1));
+        }
+    }
+    glGenVertexArrays( 1, &VA0 );
+    glBindVertexArray( VA0 );
+    GLuint vbos[2];
+    glGenBuffers( 2, vbos );
+
+    glBindBuffer( GL_ARRAY_BUFFER, vbos[0] );
+    glBufferData( GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW );
+    glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray( 0 );
+
+    glBindBuffer( GL_ARRAY_BUFFER, vbos[1] );
+    glBufferData( GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW );
+    glVertexAttribPointer( 1, 3, GL_FLOAT, GL_TRUE, 0, (void*)0 );
+    glEnableVertexAttribArray( 1 );
+
+    glBindVertexArray( 0 );
+    glBindBuffer( GL_ARRAY_BUFFER, 0 );
+
+    return VA0;
+}
+void Surface::display(Shader &sh){
+    glm::mat4 model = glm::mat4(1.0);
+    sh.setMat4("model", model);
+    glBindVertexArray(VA0);
+    glDrawArrays(GL_LINE_STRIP, 0, vertices.size());
+    glBindVertexArray(0);
+}
+
 GLuint Cube::setup(){
     float cubeVertices[] = {
             -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,

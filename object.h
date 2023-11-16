@@ -60,5 +60,19 @@ public:
     void display(Shader &sh) override;
 };
 
+class Curve : public Object {
+public:
+    Curve() {}
+    GLuint setup() override;
+    void display(Shader &sh) override;
+};
+
+class Surface: public Object{
+public:
+    Surface() {}
+    GLuint setup() override;
+    void display(Shader &sh) override;
+};
+
 
 #endif //OPENGL_OBJECT_H
