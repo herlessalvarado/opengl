@@ -196,6 +196,7 @@ int main()
         // check collision with peach
         if(CheckCollision(marioMinBB, marioMaxBB, peachMinBB, peachMaxBB) && !isFirstFrame){
             cout << "you have won" << endl;
+            glfwSetWindowShouldClose(window, true);
         }
 
         // mario jump
@@ -244,6 +245,7 @@ int main()
         // render fragile box
         model = glm::mat4(1.0f);  // Reset the model matrix
         model = glm::translate(model, fragileBoxPos);
+        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
         modelsShader.setMat4("model", model);
 
         // update fragile box bounding box
