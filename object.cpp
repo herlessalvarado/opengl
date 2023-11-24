@@ -6,6 +6,52 @@
 
 unsigned int loadTexture(const char *path);
 
+const float PI = 3.14159265359;
+
+GLuint Tunnel::setup() {
+    float tunnelPoints[numCircles * numPoints * 3];
+
+    for (int i = 0; i < numCircles; ++i) {
+        for (int j = 0; j < numPoints; ++j) {
+            float angle = 2.0f * PI * static_cast<float>(j) / static_cast<float>(numPoints);
+            float x = circleRadius * cos(angle);
+            float y = circleRadius * sin(angle);
+            float z = static_cast<float>(i) * 0.2f;  // Adjust the separation along the z-axis
+            tunnelPoints[(i * numPoints + j) * 3] = x;
+            tunnelPoints[(i * numPoints + j) * 3 + 1] = y;
+            tunnelPoints[(i * numPoints + j) * 3 + 2] = z;
+            normals.emplace_back(glm::vec3(1));
+        }
+    }
+    glGenVertexArrays( 1, &VA0);
+    glBindVertexArray( VA0);
+
+    GLuint vbos[2];
+    glGenBuffers( 2, vbos );
+
+    glBindBuffer( GL_ARRAY_BUFFER, vbos[0] );
+    glBufferData( GL_ARRAY_BUFFER, sizeof(tunnelPoints), tunnelPoints, GL_STATIC_DRAW );
+    glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray( 0 );
+
+    glBindBuffer( GL_ARRAY_BUFFER, vbos[1] );
+    glBufferData( GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW );
+    glVertexAttribPointer( 1, 3, GL_FLOAT, GL_TRUE, 0, (void*)0 );
+    glEnableVertexAttribArray( 1 );
+
+    glBindVertexArray( 0 );
+    glBindBuffer( GL_ARRAY_BUFFER, 0 );
+
+    return VA0;
+}
+void Tunnel::display(Shader &sh) {
+    glm::mat4 model = glm::mat4(1.0);
+    sh.setMat4("model", model);
+    glBindVertexArray(VA0);
+    glDrawArrays(GL_POINTS, 0, numCircles * numPoints);
+    glBindVertexArray(0);
+}
+
 GLuint Curve::setup() {
     // x = y * cos(4*y)   y E [0,2pi]
     for(float y=0; y < 2*3.1415; y += 0.1) {

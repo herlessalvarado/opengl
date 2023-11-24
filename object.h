@@ -74,5 +74,16 @@ public:
     void display(Shader &sh) override;
 };
 
+class Tunnel: public  Object{
+private:
+    int numCircles = 100;
+    int numPoints = 100;
+    float circleRadius = 2.5f;
+public:
+    Tunnel() {}
+    GLuint setup() override;
+    void display(Shader &sh) override;
+};
+
 
 #endif //OPENGL_OBJECT_H
