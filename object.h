@@ -76,9 +76,11 @@ public:
 
 class Tunnel: public  Object{
 private:
-    int numCircles = 100;
+    int numCircles = 200;
     int numPoints = 100;
     float circleRadius = 2.5f;
+    std::vector<float> triangleVertices;
+    std::vector<float> triangleNormals;
 public:
     Tunnel() {}
     GLuint setup() override;

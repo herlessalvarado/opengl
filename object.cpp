@@ -16,13 +16,87 @@ GLuint Tunnel::setup() {
             float angle = 2.0f * PI * static_cast<float>(j) / static_cast<float>(numPoints);
             float x = circleRadius * cos(angle);
             float y = circleRadius * sin(angle);
-            float z = static_cast<float>(i) * 0.2f;  // Adjust the separation along the z-axis
+            float z = static_cast<float>(i) * 0.2f;
             tunnelPoints[(i * numPoints + j) * 3] = x;
             tunnelPoints[(i * numPoints + j) * 3 + 1] = y;
             tunnelPoints[(i * numPoints + j) * 3 + 2] = z;
             normals.emplace_back(glm::vec3(1));
         }
     }
+
+    for (int i = 0; i < numCircles - 1; ++i) {
+        for (int j = 0; j < numPoints; ++j) {
+            int currentIdx = i * numPoints + j;
+            int nextIdx = (i + 1) * numPoints + j;
+
+            if(j == numPoints - 1){
+                if(j%2 == 0){
+                    triangleVertices.push_back(tunnelPoints[currentIdx * 3]);
+                    triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 1]);
+                    triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 2]);
+
+                    triangleVertices.push_back(tunnelPoints[(currentIdx - j) * 3 ]);
+                    triangleVertices.push_back(tunnelPoints[(currentIdx - j) * 3 + 1]);
+                    triangleVertices.push_back(tunnelPoints[(currentIdx - j) * 3 + 2]);
+
+                    triangleVertices.push_back(tunnelPoints[nextIdx * 3]);
+                    triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 1]);
+                    triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 2]);
+                }else{
+                    triangleVertices.push_back(tunnelPoints[currentIdx * 3]);
+                    triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 1]);
+                    triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 2]);
+
+                    triangleVertices.push_back(tunnelPoints[nextIdx * 3]);
+                    triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 1]);
+                    triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 2]);
+
+                    triangleVertices.push_back(tunnelPoints[(nextIdx - j) * 3]);
+                    triangleVertices.push_back(tunnelPoints[(nextIdx - j) * 3 + 1]);
+                    triangleVertices.push_back(tunnelPoints[(nextIdx - j) * 3 + 2]);
+                }
+                for (int k = 0; k < 3; ++k) {
+                    triangleNormals.push_back(1);
+                    triangleNormals.push_back(1);
+                    triangleNormals.push_back(1);
+                }
+                continue;
+            }
+
+            if(j%2 == 0){
+                triangleVertices.push_back(tunnelPoints[currentIdx * 3]);
+                triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 1]);
+                triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 2]);
+
+                triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 3]);
+                triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 4]);
+                triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 5]);
+
+                triangleVertices.push_back(tunnelPoints[nextIdx * 3]);
+                triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 1]);
+                triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 2]);
+            }else{
+                triangleVertices.push_back(tunnelPoints[currentIdx * 3]);
+                triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 1]);
+                triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 2]);
+
+                triangleVertices.push_back(tunnelPoints[nextIdx * 3]);
+                triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 1]);
+                triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 2]);
+
+                triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 3]);
+                triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 4]);
+                triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 5]);
+            }
+
+            for (int k = 0; k < 3; ++k) {
+                triangleNormals.push_back(1);
+                triangleNormals.push_back(1);
+                triangleNormals.push_back(1);
+            }
+        }
+    }
+
     glGenVertexArrays( 1, &VA0);
     glBindVertexArray( VA0);
 
@@ -30,12 +104,15 @@ GLuint Tunnel::setup() {
     glGenBuffers( 2, vbos );
 
     glBindBuffer( GL_ARRAY_BUFFER, vbos[0] );
-    glBufferData( GL_ARRAY_BUFFER, sizeof(tunnelPoints), tunnelPoints, GL_STATIC_DRAW );
+//    glBufferData( GL_ARRAY_BUFFER, sizeof(tunnelPoints), tunnelPoints, GL_STATIC_DRAW );
+    glBufferData(GL_ARRAY_BUFFER, triangleVertices.size() * sizeof(float), triangleVertices.data(), GL_STATIC_DRAW);
     glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray( 0 );
 
+
     glBindBuffer( GL_ARRAY_BUFFER, vbos[1] );
-    glBufferData( GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW );
+//    glBufferData( GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW );
+    glBufferData(GL_ARRAY_BUFFER, triangleNormals.size() * sizeof(float), triangleNormals.data(), GL_STATIC_DRAW);
     glVertexAttribPointer( 1, 3, GL_FLOAT, GL_TRUE, 0, (void*)0 );
     glEnableVertexAttribArray( 1 );
 
@@ -48,7 +125,8 @@ void Tunnel::display(Shader &sh) {
     glm::mat4 model = glm::mat4(1.0);
     sh.setMat4("model", model);
     glBindVertexArray(VA0);
-    glDrawArrays(GL_POINTS, 0, numCircles * numPoints);
+//    glDrawArrays(GL_POINTS, 0, numCircles * numPoints);
+    glDrawArrays(GL_TRIANGLES, 0, triangleVertices.size()/3);
     glBindVertexArray(0);
 }
 
