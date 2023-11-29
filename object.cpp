@@ -12,9 +12,10 @@ GLuint Tunnel::setup() {
     float tunnelPoints[numCircles * numPoints * 3];
 
     for (int i = 0; i < numCircles; ++i) {
+        float circleRadius = 0.5f + static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 1.5f;
         for (int j = 0; j < numPoints; ++j) {
             float angle = 2.0f * PI * static_cast<float>(j) / static_cast<float>(numPoints);
-            float x = circleRadius * cos(angle);
+            float x = circleRadius * cos(angle) ;
             float y = circleRadius * sin(angle);
             float z = static_cast<float>(i) * 0.2f;
             tunnelPoints[(i * numPoints + j) * 3] = x;
