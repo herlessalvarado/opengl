@@ -76,12 +76,15 @@ public:
 
 class Tunnel: public  Object{
 private:
-    int numCircles = 50;
-    int numPoints = 50;
+    int numCircles;
+    int numPoints;
+    std::vector<float> tunnelPoints;
+    bool showTriangulation;
     std::vector<float> triangleVertices;
     std::vector<float> triangleNormals;
 public:
-    Tunnel() {}
+    Tunnel(int _numCircles, int _numPoints, const std::vector<float>& _tunnelPoints, bool _showTriangulation)
+            : numCircles(_numCircles), numPoints(_numPoints), tunnelPoints(_tunnelPoints), showTriangulation(_showTriangulation) {};
     GLuint setup() override;
     void display(Shader &sh) override;
 };

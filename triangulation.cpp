@@ -39,9 +39,12 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 // lighting
-glm::vec3 lightBulbPos(0.0f, 7.0f, 0.0f);
+glm::vec3 lightBulbPos(0.0f, 10.0f, 0.0f);
 
-Tunnel tunnel;
+// tunnel
+glm::vec3 tunnelPos(0.0f, 5.0f, 0.0f);
+
+const float PI = 3.14159265359;
 
 int main()
 {
@@ -93,7 +96,29 @@ int main()
 
     Model lightBulb("../resources/light_bulb/light_bulb.obj");
 
-    tunnel.setup();
+    int numCircles = 50;
+    int numPoints = 50;
+
+    std::vector<float> tunnelPoints(numCircles * numPoints * 3);
+
+    for (int i = 0; i < numCircles; ++i) {
+        float circleRadius = 0.5f + static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 1.5f;
+        for (int j = 0; j < numPoints; ++j) {
+            float angle = 2.0f * PI * static_cast<float>(j) / static_cast<float>(numPoints);
+            float x = circleRadius * cos(angle) ;
+            float y = circleRadius * sin(angle);
+            float z = static_cast<float>(i) * 0.2f;
+            tunnelPoints[(i * numPoints + j) * 3] = x;
+            tunnelPoints[(i * numPoints + j) * 3 + 1] = y;
+            tunnelPoints[(i * numPoints + j) * 3 + 2] = z;
+        }
+    }
+
+    Tunnel tunnelRaw(numCircles, numPoints, tunnelPoints, false);
+    Tunnel tunnelTriangulation(numCircles, numPoints, tunnelPoints, true);
+
+    tunnelRaw.setup();
+    tunnelTriangulation.setup();
 
     // render loop
     // -----------
@@ -148,9 +173,27 @@ int main()
         glm::vec3 rotationAxis = glm::vec3(0.0f, 0.0f, 1.0f);
         model = glm::rotate(model, rotationAngle, rotationAxis);
         lightShader.setMat4("model", model);
-//        lightBulb.Draw(lightShader);
+        lightBulb.Draw(lightShader);
 
-        tunnel.display(lightingShader);
+        // render tunnel raw
+        lightShader.use();
+        lightShader.setMat4("projection", projection);
+        lightShader.setMat4("view", view);
+        model = glm::mat4(1.0f);
+        glm::vec3 tunnelPointsPos = tunnelPos - glm::vec3(5.0f, 0.0f, 0.0f);
+        model = glm::translate(model, tunnelPointsPos);
+        lightShader.setMat4("model", model);
+        tunnelRaw.display(lightShader);
+
+        // render tunnel triangulation
+        lightingShader.use();
+        lightingShader.setMat4("projection", projection);
+        lightingShader.setMat4("view", view);
+        model = glm::mat4(1.0f);
+        glm::vec3 tunnelTriangulationPos = tunnelPos + glm::vec3(5.0f, 0.0f, 0.0f);
+        model = glm::translate(model, tunnelTriangulationPos);
+        lightingShader.setMat4("model", model);
+        tunnelTriangulation.display(lightingShader);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
