@@ -29,67 +29,67 @@ GLuint Tunnel::setup() {
             int currentIdx = i * numPoints + j;
             int nextIdx = (i + 1) * numPoints + j;
 
-            if(j == numPoints - 1){
-                if(j%2 == 0){
-                    triangleVertices.push_back(tunnelPoints[currentIdx * 3]);
-                    triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 1]);
-                    triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 2]);
+            if(j == numPoints - 1) {
+                // first triangle
+                triangleVertices.emplace_back(tunnelPoints[currentIdx * 3]);
+                triangleVertices.emplace_back(tunnelPoints[currentIdx * 3 + 1]);
+                triangleVertices.emplace_back(tunnelPoints[currentIdx * 3 + 2]);
 
-                    triangleVertices.push_back(tunnelPoints[(currentIdx - j) * 3 ]);
-                    triangleVertices.push_back(tunnelPoints[(currentIdx - j) * 3 + 1]);
-                    triangleVertices.push_back(tunnelPoints[(currentIdx - j) * 3 + 2]);
+                triangleVertices.emplace_back(tunnelPoints[(currentIdx - j) * 3 ]);
+                triangleVertices.emplace_back(tunnelPoints[(currentIdx - j) * 3 + 1]);
+                triangleVertices.emplace_back(tunnelPoints[(currentIdx - j) * 3 + 2]);
 
-                    triangleVertices.push_back(tunnelPoints[nextIdx * 3]);
-                    triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 1]);
-                    triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 2]);
-                }else{
-                    triangleVertices.push_back(tunnelPoints[currentIdx * 3]);
-                    triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 1]);
-                    triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 2]);
+                triangleVertices.emplace_back(tunnelPoints[nextIdx * 3]);
+                triangleVertices.emplace_back(tunnelPoints[nextIdx * 3 + 1]);
+                triangleVertices.emplace_back(tunnelPoints[nextIdx * 3 + 2]);
 
-                    triangleVertices.push_back(tunnelPoints[nextIdx * 3]);
-                    triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 1]);
-                    triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 2]);
+                // second triangle
+                triangleVertices.emplace_back(tunnelPoints[(currentIdx - j) * 3 ]);
+                triangleVertices.emplace_back(tunnelPoints[(currentIdx - j) * 3 + 1]);
+                triangleVertices.emplace_back(tunnelPoints[(currentIdx - j) * 3 + 2]);
 
-                    triangleVertices.push_back(tunnelPoints[(nextIdx - j) * 3]);
-                    triangleVertices.push_back(tunnelPoints[(nextIdx - j) * 3 + 1]);
-                    triangleVertices.push_back(tunnelPoints[(nextIdx - j) * 3 + 2]);
-                }
-                for (int k = 0; k < 3; ++k) {
-                    triangleNormals.push_back(1);
-                    triangleNormals.push_back(1);
-                    triangleNormals.push_back(1);
-                }
-                continue;
-            }
+                triangleVertices.emplace_back(tunnelPoints[nextIdx * 3]);
+                triangleVertices.emplace_back(tunnelPoints[nextIdx * 3 + 1]);
+                triangleVertices.emplace_back(tunnelPoints[nextIdx * 3 + 2]);
 
-            if(j%2 == 0){
-                triangleVertices.push_back(tunnelPoints[currentIdx * 3]);
-                triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 1]);
-                triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 2]);
+                triangleVertices.emplace_back(tunnelPoints[(nextIdx - j) * 3]);
+                triangleVertices.emplace_back(tunnelPoints[(nextIdx - j) * 3 + 1]);
+                triangleVertices.emplace_back(tunnelPoints[(nextIdx - j) * 3 + 2]);
+            } else {
+                // first triangle
+                triangleVertices.emplace_back(tunnelPoints[currentIdx * 3]);
+                triangleVertices.emplace_back(tunnelPoints[currentIdx * 3 + 1]);
+                triangleVertices.emplace_back(tunnelPoints[currentIdx * 3 + 2]);
 
-                triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 3]);
-                triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 4]);
-                triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 5]);
+                triangleVertices.emplace_back(tunnelPoints[currentIdx * 3 + 3]);
+                triangleVertices.emplace_back(tunnelPoints[currentIdx * 3 + 4]);
+                triangleVertices.emplace_back(tunnelPoints[currentIdx * 3 + 5]);
 
-                triangleVertices.push_back(tunnelPoints[nextIdx * 3]);
-                triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 1]);
-                triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 2]);
-            }else{
-                triangleVertices.push_back(tunnelPoints[currentIdx * 3]);
-                triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 1]);
-                triangleVertices.push_back(tunnelPoints[currentIdx * 3 + 2]);
+                triangleVertices.emplace_back(tunnelPoints[nextIdx * 3]);
+                triangleVertices.emplace_back(tunnelPoints[nextIdx * 3 + 1]);
+                triangleVertices.emplace_back(tunnelPoints[nextIdx * 3 + 2]);
 
-                triangleVertices.push_back(tunnelPoints[nextIdx * 3]);
-                triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 1]);
-                triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 2]);
+                // second triangle
+                triangleVertices.emplace_back(tunnelPoints[nextIdx * 3]);
+                triangleVertices.emplace_back(tunnelPoints[nextIdx * 3 + 1]);
+                triangleVertices.emplace_back(tunnelPoints[nextIdx * 3 + 2]);
 
-                triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 3]);
-                triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 4]);
-                triangleVertices.push_back(tunnelPoints[nextIdx * 3 + 5]);
+                triangleVertices.emplace_back(tunnelPoints[nextIdx * 3 + 3]);
+                triangleVertices.emplace_back(tunnelPoints[nextIdx * 3 + 4]);
+                triangleVertices.emplace_back(tunnelPoints[nextIdx * 3 + 5]);
+
+                triangleVertices.emplace_back(tunnelPoints[currentIdx * 3 + 3]);
+                triangleVertices.emplace_back(tunnelPoints[currentIdx * 3 + 4]);
+                triangleVertices.emplace_back(tunnelPoints[currentIdx * 3 + 5]);
             }
 
             for (int k = 0; k < 3; ++k) {
+                // first triangle
+                triangleNormals.push_back(1);
+                triangleNormals.push_back(1);
+                triangleNormals.push_back(1);
+
+                // second triangle
                 triangleNormals.push_back(1);
                 triangleNormals.push_back(1);
                 triangleNormals.push_back(1);
